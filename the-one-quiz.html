@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Let Him Answer. You'll Know.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cream: #FAF7F2; --ink: #1C1810; --gold: #B8860B; --gold-light: #E8D5A3;
+  --rose: #8B3A52; --rose-light: #F5E6EC; --sage: #4A6741; --sage-light: #E8F0E6;
+  --muted: #6B6358; --border: rgba(28,24,16,0.12); --card-bg: #FFFDF9;
+}
+html,body { min-height:100%; background:var(--cream); font-family:'Jost',sans-serif; color:var(--ink); }
+body { display:flex; justify-content:center; padding:2rem 1rem 4rem; }
+#app { width:100%; max-width:680px; }
+
+.hidden { display:none !important; }
+.eyebrow { font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:.75rem; font-weight:500; }
+.screen-header { text-align:center; padding:2.5rem 1.5rem 2rem; border-bottom:.5px solid var(--border); margin-bottom:2rem; }
+.screen-header h1 { font-family:'Playfair Display',serif; font-size:30px; font-weight:400; line-height:1.3; margin-bottom:.5rem; }
+.screen-header p { font-size:14px; color:var(--muted); font-weight:300; line-height:1.6; }
+
+/* PROFILE */
+.field-group { margin-bottom:1.5rem; }
+.field-label { font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:500; margin-bottom:8px; display:block; }
+.field-input { width:100%; padding:13px 16px; border:.5px solid var(--border); border-radius:8px; background:var(--card-bg); font-family:'Jost',sans-serif; font-size:15px; color:var(--ink); outline:none; transition:border-color .18s; }
+.field-input:focus { border-color:var(--rose); }
+.field-input::placeholder { color:#B0A89E; }
+.age-row { display:flex; gap:12px; align-items:flex-end; }
+.age-row .field-input { max-width:130px; }
+.age-hint { font-size:13px; color:var(--muted); font-weight:300; padding-bottom:13px; }
+.age-warning { font-size:13px; color:var(--rose); background:var(--rose-light); border:.5px solid rgba(139,58,82,.2); border-radius:8px; padding:10px 14px; margin-top:8px; display:none; line-height:1.5; }
+.hobby-intro { font-size:13px; color:var(--muted); margin-bottom:12px; font-weight:300; line-height:1.6; }
+.hobby-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+.hobby-chip { padding:8px 16px; border:.5px solid var(--border); border-radius:20px; background:transparent; cursor:pointer; font-family:'Jost',sans-serif; font-size:14px; color:var(--muted); font-weight:400; transition:all .15s; }
+.hobby-chip:hover { border-color:var(--rose); color:var(--rose); background:var(--rose-light); }
+.hobby-chip.selected { border-color:var(--sage); color:var(--sage); background:var(--sage-light); font-weight:500; }
+.hobby-chip.basic.selected { border-color:#8B4513; color:#8B4513; background:#FFF0E6; }
+.hobby-note { font-size:12px; color:var(--muted); margin-top:10px; line-height:1.5; min-height:18px; }
+.btn-start { width:100%; padding:14px; margin-top:2rem; background:var(--rose); border:none; border-radius:10px; font-family:'Jost',sans-serif; font-size:15px; font-weight:500; color:#fff; cursor:pointer; letter-spacing:.05em; transition:background .18s; }
+.btn-start:hover { background:#7A2F45; }
+.btn-start:disabled { background:#D5C5C9; cursor:not-allowed; }
+
+/* QUIZ */
+.progress-bar-wrap { padding:0 .25rem; margin-bottom:2rem; }
+.progress-meta { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:8px; }
+.progress-track { height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--rose)); border-radius:2px; transition:width .5s ease; }
+.section-label { display:flex; align-items:center; gap:10px; margin-bottom:1.25rem; }
+.section-label .num { width:24px; height:24px; border-radius:50%; background:var(--gold-light); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:500; color:var(--gold); flex-shrink:0; }
+.section-label .sname { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500; }
+.question-card { background:var(--card-bg); border:.5px solid var(--border); border-radius:12px; padding:1.75rem 1.5rem 1.5rem; margin-bottom:1rem; transition:border-color .2s; box-shadow:0 1px 8px rgba(28,24,16,.04); }
+.question-card.answered { border-color:rgba(184,134,11,.3); }
+.question-text { font-family:'Playfair Display',serif; font-size:18px; font-weight:400; line-height:1.6; color:var(--ink); margin-bottom:1.5rem; font-style:italic; }
+.options-grid { display:flex; flex-direction:column; gap:10px; }
+.option-btn { display:flex; align-items:flex-start; gap:14px; padding:12px 16px; border:.5px solid var(--border); border-radius:8px; background:transparent; cursor:pointer; text-align:left; transition:all .18s; font-family:'Jost',sans-serif; font-size:15px; color:var(--ink); font-weight:300; line-height:1.5; width:100%; }
+.option-btn:hover { background:var(--rose-light); border-color:var(--rose); color:var(--rose); }
+.option-btn.selected { background:var(--rose-light); border-color:var(--rose); color:var(--rose); }
+.option-btn .dot { width:18px; height:18px; border-radius:50%; border:1.5px solid currentColor; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+.option-btn.selected .dot::after { content:''; width:9px; height:9px; border-radius:50%; background:var(--rose); }
+.nav-area { display:flex; justify-content:space-between; align-items:center; padding:.5rem 0 0; }
+.btn-nav { font-family:'Jost',sans-serif; font-size:14px; font-weight:500; padding:11px 26px; border-radius:8px; cursor:pointer; border:.5px solid var(--border); background:transparent; color:var(--muted); transition:all .18s; letter-spacing:.05em; }
+.btn-nav:hover { background:var(--cream); color:var(--ink); }
+.btn-next { background:var(--rose); border-color:var(--rose); color:#fff; }
+.btn-next:hover { background:#7A2F45; border-color:#7A2F45; color:#fff; }
+.btn-next:disabled { background:#D5C5C9; border-color:#D5C5C9; color:#fff; cursor:not-allowed; }
+
+/* RESULT */
+.result-screen { padding:2.5rem 0; text-align:center; }
+.result-icon { font-size:52px; margin-bottom:1rem; }
+.result-title { font-family:'Playfair Display',serif; font-size:30px; font-weight:400; margin-bottom:.5rem; line-height:1.3; }
+.result-sub { font-size:14px; color:var(--muted); margin-bottom:2rem; line-height:1.7; }
+.profile-pill { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:2rem; }
+.profile-pill span { font-size:13px; color:var(--muted); background:var(--card-bg); border:.5px solid var(--border); border-radius:20px; padding:5px 14px; }
+.profile-pill span.warn { color:var(--rose); border-color:rgba(139,58,82,.3); background:var(--rose-light); }
+.score-ring-wrap { display:flex; justify-content:center; margin-bottom:2.5rem; }
+.score-ring { position:relative; width:130px; height:130px; }
+.score-ring svg { transform:rotate(-90deg); }
+.score-num { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Playfair Display',serif; font-size:30px; font-weight:500; }
+.breakdown-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:2rem; text-align:left; }
+@media(max-width:480px){ .breakdown-grid { grid-template-columns:repeat(2,1fr); } }
+.breakdown-card { background:var(--card-bg); border:.5px solid var(--border); border-radius:10px; padding:14px; }
+.breakdown-card .cat-name { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; line-height:1.4; }
+.breakdown-card .cat-score { font-family:'Playfair Display',serif; font-size:24px; font-weight:400; margin-bottom:6px; }
+.breakdown-card .cat-bar { height:3px; border-radius:2px; background:var(--border); overflow:hidden; }
+.breakdown-card .cat-fill { height:100%; border-radius:2px; }
+.flag-box { border-radius:12px; padding:1.5rem; text-align:left; margin-bottom:1.5rem; }
+.flag-box h3 { font-size:11px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:.75rem; font-weight:500; }
+.flag-item { display:flex; align-items:flex-start; gap:10px; font-size:14px; color:var(--ink); line-height:1.5; margin-bottom:8px; padding-bottom:8px; border-bottom:.5px solid var(--border); }
+.flag-item:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+.flag-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.verdict-banner { border-radius:12px; padding:1.5rem 1.75rem; margin-bottom:2rem; font-family:'Playfair Display',serif; font-size:16px; font-style:italic; line-height:1.8; text-align:left; }
+.btn-restart { font-family:'Jost',sans-serif; font-size:14px; font-weight:500; padding:12px 32px; border:.5px solid var(--rose); border-radius:8px; background:transparent; color:var(--rose); cursor:pointer; letter-spacing:.05em; transition:all .18s; }
+.btn-restart:hover { background:var(--rose); color:#fff; }
+.email-status { font-size:13px; color:var(--muted); margin-top:1.25rem; min-height:20px; }
+.email-status.ok { color:var(--sage); }
+.email-status.err { color:var(--rose); }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════════ SCREEN 1 : PROFILE ══════════ -->
+<div id="screen-profile">
+  <div class="screen-header">
+    <div class="eyebrow">Before we begin</div>
+    <h1>A little about you</h1>
+    <p>Just some basics. Answer honestly — there's no wrong answer here. Yet.</p>
+  </div>
+
+  <div class="field-group">
+    <label class="field-label" for="inp-name">Your first name</label>
+    <input class="field-input" id="inp-name" type="text" placeholder="e.g. Adam" autocomplete="off" oninput="checkReady()">
+  </div>
+
+  <div class="field-group">
+    <label class="field-label">Your age</label>
+    <div class="age-row">
+      <input class="field-input" id="inp-age" type="number" min="16" max="65" placeholder="e.g. 25" oninput="onAgeInput()">
+      <span class="age-hint">years old</span>
+    </div>
+    <div class="age-warning" id="age-warn">
+      She's looking for someone between 22 and 28. You're outside that range — you're welcome to continue, and the result will note it.
+    </div>
+  </div>
+
+  <div class="field-group">
+    <label class="field-label">Hobbies &amp; interests</label>
+    <p class="hobby-intro">Select everything that genuinely applies to you. Be honest — nobody's watching.</p>
+    <div class="hobby-grid" id="hobby-grid"></div>
+    <p class="hobby-note" id="hobby-note"></p>
+  </div>
+
+  <button class="btn-start" id="btn-start" onclick="startQuiz()" disabled>Begin the quiz →</button>
+</div>
+
+<!-- ══════════ SCREEN 2 : QUIZ ══════════ -->
+<div id="screen-quiz" class="hidden">
+  <div class="screen-header">
+    <div class="eyebrow">The quiz</div>
+    <h1 id="quiz-h1">Let him answer.<br>You'll know.</h1>
+    <p>No right or wrong. Just tell the truth.</p>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-meta">
+      <span id="q-counter">Question 1 of 30</span>
+      <span id="sec-name">Character</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="prog-fill" style="width:3.3%"></div>
+    </div>
+  </div>
+
+  <div id="sec-tag" class="section-label">
+    <div class="num">1</div>
+    <div class="sname">Character &amp; Integrity</div>
+  </div>
+
+  <div class="question-card" id="q-card">
+    <div class="question-text" id="q-text"></div>
+    <div class="options-grid" id="q-options"></div>
+  </div>
+
+  <div class="nav-area">
+    <button class="btn-nav" id="btn-back" onclick="goBack()">← Back</button>
+    <button class="btn-nav btn-next" id="btn-next" onclick="goNext()" disabled>Continue →</button>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN 3 : RESULT ══════════ -->
+<div id="screen-result" class="hidden result-screen"></div>
+
+</div><!-- #app -->
+
+<script>
+// ═══════════════════════════════════════════════════
+//  EMAILJS SETUP  —  3-minute setup at emailjs.com
+//
+//  1. Create free account at https://www.emailjs.com
+//  2. Add Service → Gmail → copy Service ID below
+//  3. Create Template → set "To Email" to cerineguerra@gmail.com
+//     Add these variables in the template body:
+//     Name: {{name}}  |  Age: {{age}} {{age_flag}}
+//     Score: {{score}} — {{tier}}
+//     Hobbies: {{hobbies}}
+//     Breakdown: {{breakdown}}
+//     Flags: {{flags}}
+//  4. Copy Public Key from Account → API Keys
+// ═══════════════════════════════════════════════════
+const EJS_KEY      = 'Oowc2LOWN_7oSiU8Y';
+const EJS_SERVICE  = 'service_cj5qqbv';
+const EJS_TEMPLATE = 'template_pbkz3s7';
+
+emailjs.init(EJS_KEY);
+
+// ── HOBBY DATA ──────────────────────────────────────
+const HOBBIES = [
+  { label:'Photography',        creative:true },
+  { label:'Music / DJ',         creative:true },
+  { label:'Film-making',        creative:true },
+  { label:'Coding / Dev',       creative:true },
+  { label:'Design / UI/UX',     creative:true },
+  { label:'Drawing / Art',      creative:true },
+  { label:'Writing',            creative:true },
+  { label:'Tech & Gadgets',     creative:true },
+  { label:'Travel',             creative:true },
+  { label:'Cooking',            creative:true },
+  { label:'Reading',            creative:true },
+  { label:'Gaming',             creative:true },
+  { label:'Gym / Fitness',      creative:false },
+  { label:'Football / Soccer',  creative:false },
+  { label:'Basketball',         creative:false },
+  { label:'Watching Netflix',   creative:false },
+  { label:'Going out / Clubs',  creative:false },
+  { label:'Cars',               creative:false },
+];
+
+const picked = new Set();
+
+function buildGrid() {
+  const g = document.getElementById('hobby-grid');
+  HOBBIES.forEach(h => {
+    const c = document.createElement('button');
+    c.className = 'hobby-chip' + (h.creative ? '' : ' basic');
+    c.textContent = h.label;
+    c.onclick = () => {
+      if (picked.has(h.label)) { picked.delete(h.label); c.classList.remove('selected'); }
+      else { picked.add(h.label); c.classList.add('selected'); }
+      updateHobbyNote();
+      checkReady();
+    };
+    g.appendChild(c);
+  });
+}
+
+function updateHobbyNote() {
+  const note = document.getElementById('hobby-note');
+  const creative = [...picked].filter(l => HOBBIES.find(x => x.label===l)?.creative).length;
+  const basic    = [...picked].filter(l => !HOBBIES.find(x => x.label===l)?.creative).length;
+  if (creative >= 2) { note.style.color = 'var(--sage)'; note.textContent = 'Good taste.'; }
+  else if (creative === 1) { note.style.color = 'var(--muted)'; note.textContent = 'A creative spark — she\'ll notice.'; }
+  else if (basic > 0 && creative === 0) { note.style.color = 'var(--rose)'; note.textContent = 'She values creative, curious minds. This will show in the results.'; }
+  else { note.textContent = ''; }
+}
+
+// ── AGE ─────────────────────────────────────────────
+let ageWarn = false;
+function onAgeInput() {
+  const v = parseInt(document.getElementById('inp-age').value);
+  ageWarn = !isNaN(v) && (v < 22 || v > 28);
+  document.getElementById('age-warn').style.display = ageWarn ? 'block' : 'none';
+  checkReady();
+}
+
+function checkReady() {
+  const name = document.getElementById('inp-name').value.trim();
+  const age  = document.getElementById('inp-age').value.trim();
+  document.getElementById('btn-start').disabled = !(name && age && picked.size > 0);
+}
+
+function startQuiz() {
+  const name = document.getElementById('inp-name').value.trim();
+  document.getElementById('quiz-h1').innerHTML = `Let him answer, ${name}.<br>You'll know.`;
+  document.getElementById('screen-profile').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.remove('hidden');
+  render();
+}
+
+// ── QUIZ DATA ────────────────────────────────────────
+const SECS  = ['character','mind','faith','lifestyle','relationship','flags'];
+const SNAME = { character:'Character & Integrity', mind:'Mind & Vision', faith:'Values & Faith', lifestyle:'Lifestyle & Energy', relationship:'Relationship Depth', flags:'Red Flag Check' };
+const SCOL  = { character:'#8B3A52', mind:'#4A6741', faith:'#B8860B', lifestyle:'#2C5F7A', relationship:'#6B4C82', flags:'#8B4513' };
+
+const QS = [
+  {s:'character', t:"You made a mistake at work that nobody noticed. What do you do?", o:[
+    {x:"Stay quiet — if it didn't hurt anyone, there's no reason to bring it up.",v:0,f:"avoids honesty"},
+    {x:"Mention it to someone I trust, just to have it off my conscience.",v:2},
+    {x:"Address it properly — admit it, fix what I can, and move on.",v:3},
+    {x:"Depends how bad it was. But I lean toward owning it.",v:2}]},
+  {s:'character', t:"Your close friend tells you something you know isn't true. What do you do?", o:[
+    {x:"Let it go — friendships aren't worth the argument.",v:0,f:"avoids conflict instead of addressing it"},
+    {x:"Tell them gently that I see it differently.",v:3},
+    {x:"Agree with them. No point making them feel bad.",v:0,f:"dishonest for comfort"},
+    {x:"Change the subject. Truth isn't always my job.",v:1}]},
+  {s:'character', t:"An attractive woman is being difficult in a service situation. How do you react?", o:[
+    {x:"I'd still be patient — how she looks doesn't change how I treat people.",v:3},
+    {x:"Honestly, I'd probably be a little more forgiving with her.",v:0,f:"inconsistent respect for women"},
+    {x:"I hold everyone to the same standard.",v:3},
+    {x:"I don't know — depends on my mood.",v:1}]},
+  {s:'character', t:"Your partner is upset. You're pretty sure they're overreacting. What happens?", o:[
+    {x:"I tell them they're overreacting so we can move on faster.",v:0,f:"dismissive during conflict"},
+    {x:"I try to understand why it matters to them, even if I don't get it yet.",v:3},
+    {x:"I go quiet until things calm down.",v:1},
+    {x:"I listen first. Ask questions. Figure out what's actually going on.",v:3}]},
+  {s:'character', t:"Someone you know gets hurt by their own choices. What's your first thought?", o:[
+    {x:"They did it to themselves — I don't have much sympathy.",v:0,f:"victim blaming mindset"},
+    {x:"I wonder what drove them to make that choice.",v:3},
+    {x:"Still feels bad, regardless of whose fault it was.",v:3},
+    {x:"I'd probably say 'I told you so' eventually.",v:0,f:"lacks compassion"}]},
+  {s:'mind', t:"You meet someone clearly smarter than you in your field. What do you feel?", o:[
+    {x:"A little defensive, honestly.",v:0,f:"insecure"},
+    {x:"Curious — I want to understand how they think.",v:3},
+    {x:"Nothing much. Everyone has their thing.",v:1},
+    {x:"Excited. That kind of person is rare and worth knowing.",v:3}]},
+  {s:'mind', t:"What does your last year of self-investment look like?", o:[
+    {x:"I've mostly been in maintenance mode.",v:0,f:"comfort zone mindset"},
+    {x:"Books, courses, new skills — I stay intentional about it.",v:3},
+    {x:"I picked up a few things here and there.",v:1},
+    {x:"I learned a lot from experience, even if not formally.",v:2}]},
+  {s:'mind', t:"You have a big decision to make. What's your process?", o:[
+    {x:"I go with my gut. Overthinking kills momentum.",v:1},
+    {x:"I spiral a bit, but eventually commit.",v:1},
+    {x:"I gather information, sit with it, then decide.",v:3},
+    {x:"I avoid deciding until I'm forced to.",v:0,f:"avoids responsibility"}]},
+  {s:'mind', t:"What does financial freedom mean to you?", o:[
+    {x:"Enough to not stress about bills.",v:1},
+    {x:"Owning my time completely — that's the real goal.",v:3},
+    {x:"A nice lifestyle and security for my family.",v:2},
+    {x:"I haven't really thought about it that deeply.",v:0,f:"no vision"}]},
+  {s:'mind', t:"You're reading a book and it challenges a belief you've held for years. What happens?", o:[
+    {x:"I find reasons to dismiss it.",v:0,f:"closed-minded"},
+    {x:"I sit with the discomfort and think it through properly.",v:3},
+    {x:"I mention it to someone and talk it out.",v:2},
+    {x:"I note it, keep reading, come back to it.",v:3}]},
+  {s:'faith', t:"How does your faith show up on an ordinary Tuesday?", o:[
+    {x:"Mostly in the big moments — Ramadan, Eid, and so on.",v:1},
+    {x:"It's the lens I use for decisions, not just rituals.",v:3},
+    {x:"It's private. I keep it between me and God.",v:2},
+    {x:"I'm still finding my relationship with it.",v:1}]},
+  {s:'faith', t:"Your friend from a different religion invites you to their family celebration. What do you do?", o:[
+    {x:"I'd decline — it's not my place.",v:0,f:"intolerant"},
+    {x:"Go, celebrate with them, keep my own values intact.",v:3},
+    {x:"Ask first what it involves, then decide.",v:2},
+    {x:"Join out of respect — difference is interesting, not threatening.",v:3}]},
+  {s:'faith', t:"Someone you respect does something you believe is haram. What do you do?", o:[
+    {x:"I correct them — kindly but clearly.",v:2},
+    {x:"I mind my own business. Their choices, their judgment.",v:3},
+    {x:"I'd probably distance myself quietly.",v:1},
+    {x:"I make sure they know my position, more than once if needed.",v:0,f:"imposing, self-righteous"}]},
+  {s:'faith', t:"Waiting until marriage — where does that come from for you?", o:[
+    {x:"I respect it because I was raised to. Honestly, it's hard.",v:1},
+    {x:"It's a personal value I've chosen and I hold it with conviction.",v:3},
+    {x:"I think it depends on the relationship.",v:0,f:"does not respect this boundary"},
+    {x:"It's a principle that protects something sacred — I genuinely believe that.",v:3}]},
+  {s:'faith', t:"Someone who doesn't share your beliefs lives very differently from you. How do you feel?", o:[
+    {x:"They're on a different path. Not mine to judge.",v:3},
+    {x:"It's hard not to think they're missing something important.",v:0,f:"rigid worldview"},
+    {x:"Curious about how they arrived there.",v:3},
+    {x:"Fine with it, as long as they don't involve me.",v:2}]},
+  {s:'lifestyle', t:"Someone offers you a one-week off-grid trip — no plan, no comfort guarantee. What happens?", o:[
+    {x:"I'd panic a little but say yes.",v:2},
+    {x:"That's exactly my kind of thing.",v:3},
+    {x:"I'd want more details before committing.",v:1},
+    {x:"That sounds genuinely miserable.",v:0,f:"averse to risk and adventure"}]},
+  {s:'lifestyle', t:"You're planning a trip with someone important to you. How does it go?", o:[
+    {x:"I prefer to be spontaneous and let things unfold.",v:1},
+    {x:"I like having structure but leaving room for surprises.",v:3},
+    {x:"I research everything thoroughly and build a real itinerary.",v:3},
+    {x:"I let them plan — I'm not a planning person.",v:0,f:"avoids responsibility"}]},
+  {s:'lifestyle', t:"What makes a perfect weekend for you?", o:[
+    {x:"Something that resets me — nature, movement, good food, good conversation.",v:3},
+    {x:"Staying home, not doing much. I need the downtime.",v:1},
+    {x:"Mixing stillness with something new or spontaneous.",v:3},
+    {x:"Out with friends, preferably late nights.",v:1}]},
+  {s:'lifestyle', t:"Emergency — flight cancelled, hotel overbooked, unknown city. What do you do?", o:[
+    {x:"Panic a little, then figure it out.",v:2},
+    {x:"Stay calm. Find solutions. It'll become a story later.",v:3},
+    {x:"Get frustrated and blame someone.",v:0,f:"poor under pressure"},
+    {x:"Freeze. That kind of thing really throws me.",v:0,f:"poor under pressure"}]},
+  {s:'lifestyle', t:"Your partner has a creative hobby that takes real time. What's your stance?", o:[
+    {x:"It's their thing. I support it.",v:2},
+    {x:"I want to understand it. I might even be part of it sometimes.",v:3},
+    {x:"As long as it doesn't eat into our time together.",v:0,f:"controlling under 'care'"},
+    {x:"I'd find it interesting but wouldn't make it about me.",v:3}]},
+  {s:'relationship', t:"You notice your partner is off today — quieter than usual. What do you do?", o:[
+    {x:"Wait for them to bring it up.",v:1},
+    {x:"Ask once, then give them space if they say they're fine.",v:3},
+    {x:"Keep checking in until I know what's wrong.",v:0,f:"doesn't respect space"},
+    {x:"Do something small — make tea, put on their favorite thing — without making it a conversation.",v:3}]},
+  {s:'relationship', t:"Your partner is working toward something that's taking all their energy. How are you?", o:[
+    {x:"Proud. I'd try to clear the way for them.",v:3},
+    {x:"Supportive but quietly hoping it wraps up soon.",v:1},
+    {x:"A little neglected, honestly.",v:0,f:"makes her success about him"},
+    {x:"I'd step into the gap — handle more, ask less.",v:3}]},
+  {s:'relationship', t:"What does a fight between two people who love each other look like to you?", o:[
+    {x:"Messy, but it should end in resolution — not victory.",v:3},
+    {x:"I try to win. I can't help it.",v:0,f:"conflict is ego-driven"},
+    {x:"Ideally, it stays calm and focused on the actual issue.",v:3},
+    {x:"I shut down when there's conflict. I need time.",v:1}]},
+  {s:'relationship', t:"A woman in your life has bigger ambitions than you. How does that sit with you?", o:[
+    {x:"Honestly, it makes me a little uncomfortable.",v:0,f:"threatened by her growth"},
+    {x:"That's attractive. Ambition is something I admire.",v:3},
+    {x:"I don't mind, as long as we're still aligned on what matters.",v:2},
+    {x:"I'd want to learn from her and push myself too.",v:3}]},
+  {s:'relationship', t:"What does it look like when a man is protective without being controlling?", o:[
+    {x:"He worries about her and makes sure she knows it.",v:0,f:"protection as control"},
+    {x:"He creates safety — not restrictions.",v:3},
+    {x:"He has input on her choices because he cares.",v:0,f:"controlling"},
+    {x:"He's got her back completely, but her choices are hers.",v:3}]},
+  {s:'relationship', t:"She cancels plans to rest. What's your reaction?", o:[
+    {x:"A little disappointed, but I'd never make her feel guilty.",v:3},
+    {x:"I'd probably sulk a little.",v:0,f:"guilt-tripping"},
+    {x:"Fine with it. I'd check in and let her rest.",v:3},
+    {x:"I'd want to understand if something was actually wrong.",v:2}]},
+  {s:'flags', t:"You're losing an argument and you know it. What happens?", o:[
+    {x:"I find a way to change the subject.",v:0,f:"manipulative"},
+    {x:"I admit it. Being right isn't always the point.",v:3},
+    {x:"I get louder, honestly.",v:0,f:"emotionally manipulative"},
+    {x:"I go quiet and come back to it when I've thought it through.",v:2}]},
+  {s:'flags', t:"She's succeeding at something you haven't. What do you feel?", o:[
+    {x:"Genuinely happy. Her win isn't my loss.",v:3},
+    {x:"Happy for her, but it stings a little.",v:2},
+    {x:"I'd find ways to subtly minimize it, even if I didn't mean to.",v:0,f:"threatened — will shrink her"},
+    {x:"I'd feel competitive. I'd want to surpass it.",v:0,f:"makes her success about him"}]},
+  {s:'flags', t:"You want something from her. She says no. What comes next?", o:[
+    {x:"I accept it. No is an answer.",v:3},
+    {x:"I try to understand why, but I don't push.",v:2},
+    {x:"I'd bring it up again a different way.",v:0,f:"doesn't respect her no"},
+    {x:"I'd be frustrated and probably distant afterward.",v:0,f:"emotional punishment"}]},
+  {s:'flags', t:"You're under real pressure — money, family, work. What does she see from you?", o:[
+    {x:"I try to carry it alone so she doesn't worry.",v:1},
+    {x:"She sees me calm on the outside. I process privately.",v:2},
+    {x:"I become short-tempered and take it out on whoever's near.",v:0,f:"emotionally unsafe under stress"},
+    {x:"I'm honest with her about the pressure but don't fall apart.",v:3}]},
+  {s:'flags', t:"Last question: Why do you think the right woman would choose you?", o:[
+    {x:"Because I'd love her in ways she's never experienced.",v:2},
+    {x:"Because I'm building something worth joining.",v:3},
+    {x:"Honestly, I'm still figuring out what I bring.",v:1},
+    {x:"She wouldn't just choose me. We'd choose each other.",v:3}]}
+];
+
+let cur = 0;
+let ans = new Array(QS.length).fill(null);
+
+function render() {
+  const q = QS[cur];
+  document.getElementById('q-counter').textContent = `Question ${cur+1} of ${QS.length}`;
+  document.getElementById('prog-fill').style.width = ((cur+1)/QS.length*100).toFixed(1)+'%';
+  document.getElementById('sec-name').textContent = SNAME[q.s];
+  const si = SECS.indexOf(q.s);
+  document.getElementById('sec-tag').querySelector('.num').textContent = si+1;
+  document.getElementById('sec-tag').querySelector('.sname').textContent = SNAME[q.s];
+  document.getElementById('q-text').textContent = q.t;
+  const og = document.getElementById('q-options');
+  og.innerHTML = '';
+  q.o.forEach((opt,i) => {
+    const b = document.createElement('button');
+    b.className = 'option-btn'+(ans[cur]===i?' selected':'');
+    b.innerHTML = `<span class="dot"></span><span>${opt.x}</span>`;
+    b.onclick = () => { ans[cur]=i; render(); };
+    og.appendChild(b);
+  });
+  document.getElementById('btn-back').style.visibility = cur===0?'hidden':'visible';
+  document.getElementById('btn-next').disabled = ans[cur]===null;
+  document.getElementById('btn-next').textContent = cur===QS.length-1?'See results →':'Continue →';
+  document.getElementById('q-card').className = 'question-card'+(ans[cur]!==null?' answered':'');
+}
+
+function goNext() {
+  if(ans[cur]===null) return;
+  if(cur===QS.length-1){ showResult(); return; }
+  cur++; window.scrollTo({top:0,behavior:'smooth'}); render();
+}
+function goBack() {
+  if(cur>0){ cur--; window.scrollTo({top:0,behavior:'smooth'}); render(); }
+}
+
+// ── RESULT ───────────────────────────────────────────
+function showResult() {
+  document.getElementById('screen-quiz').classList.add('hidden');
+  const rs = document.getElementById('screen-result');
+  rs.classList.remove('hidden');
+
+  const name    = document.getElementById('inp-name').value.trim();
+  const age     = parseInt(document.getElementById('inp-age').value);
+  const hobbies = [...picked];
+
+  let total=0, maxT=0, flags=[], sS={}, sM={};
+  SECS.forEach(s => { sS[s]=0; sM[s]=0; });
+
+  QS.forEach((q,qi) => {
+    const ai=ans[qi]; if(ai===null) return;
+    const o=q.o[ai];
+    total+=o.v; maxT+=3; sS[q.s]+=o.v; sM[q.s]+=3;
+    if(o.f) flags.push({text:o.f, sec:q.s});
+  });
+
+  // hobby score modifier
+  const creativeN = hobbies.filter(l => HOBBIES.find(x=>x.label===l)?.creative).length;
+  const basicN    = hobbies.filter(l => !HOBBIES.find(x=>x.label===l)?.creative).length;
+  let bonus = 0;
+  if(creativeN >= 3) bonus = 4;
+  else if(creativeN === 2) bonus = 3;
+  else if(creativeN === 1) bonus = 1;
+  else if(basicN > 0 && creativeN === 0) bonus = -5;
+
+  const adj = Math.max(0, total + bonus);
+  const pct = Math.round(adj / maxT * 100);
+
+  let tier, icon, color, verdict;
+  if(pct>=82){ tier="He's worth your time"; icon='✦'; color='#4A6741';
+    verdict="The answers here reveal someone with real integrity, emotional maturity, and vision. That doesn't mean he's perfect — but it means he's the kind of man who does the work. He sees people clearly, holds himself accountable, and isn't threatened by your depth. Trust your instincts.";
+  } else if(pct>=65){ tier='Promising, but pay attention'; icon='◈'; color='#B8860B';
+    verdict="There's real potential here — and some things that deserve a longer look. A few of his answers suggest blind spots that haven't been examined yet. That doesn't disqualify him. It means the next conversations matter.";
+  } else if(pct>=45){ tier='Proceed with clear eyes'; icon='△'; color='#8B3A52';
+    verdict="Some of his answers reveal patterns worth noting. Not catastrophic — but not invisible either. Watch how these tendencies show up in real life. Attraction is real, but clarity is kinder in the long run.";
+  } else { tier='Listen to what he just told you'; icon='◇'; color='#8B3A52';
+    verdict="His answers paint a picture. Not of a bad person, necessarily — but of someone who isn't ready, or aligned, or both. You were looking for alignment. This isn't it. Trust that.";
+  }
+
+  const C = 2*Math.PI*56;
+  const off = C-(pct/100)*C;
+
+  const bHTML = SECS.map(s => {
+    const sp = sM[s]>0 ? Math.round(sS[s]/sM[s]*100) : 0;
+    return `<div class="breakdown-card"><div class="cat-name">${SNAME[s]}</div><div class="cat-score" style="color:${SCOL[s]}">${sp}%</div><div class="cat-bar"><div class="cat-fill" style="width:${sp}%;background:${SCOL[s]}"></div></div></div>`;
+  }).join('');
+
+  let uf=[], seen=new Set();
+  flags.forEach(f=>{ if(!seen.has(f.text)){ seen.add(f.text); uf.push(f); }});
+
+  const fHTML = uf.length>0
+    ? `<div class="flag-box" style="background:#FFF8F0;border:.5px solid rgba(184,134,11,.3)"><h3 style="color:var(--gold)">Things to watch</h3>${uf.map(f=>`<div class="flag-item"><div class="flag-dot" style="background:#C0392B"></div><span>${f.text} <span style="color:#aaa;font-size:12px">(${SNAME[f.sec]})</span></span></div>`).join('')}</div>`
+    : `<div class="flag-box" style="background:var(--sage-light);border:.5px solid rgba(74,103,65,.3)"><h3 style="color:var(--sage)">No red flags detected</h3><div class="flag-item"><div class="flag-dot" style="background:var(--sage)"></div><span>No concerning patterns found across all six sections.</span></div></div>`;
+
+  const agePill = ageWarn
+    ? `<span class="warn">Age: ${age} ⚠ outside 22–28</span>`
+    : `<span>Age: ${age}</span>`;
+
+  rs.innerHTML = `
+    <div class="result-icon" style="color:${color}">${icon}</div>
+    <div class="result-title">${tier}</div>
+    <p class="result-sub">30 scenario questions · 6 dimensions</p>
+    <div class="profile-pill">
+      <span>${name}</span>${agePill}<span>${hobbies.join(', ') || '—'}</span>
+    </div>
+    <div class="score-ring-wrap">
+      <div class="score-ring">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle cx="65" cy="65" r="56" fill="none" stroke="#E8D5A3" stroke-width="6"/>
+          <circle cx="65" cy="65" r="56" fill="none" stroke="${color}" stroke-width="6"
+            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" stroke-linecap="round"/>
+        </svg>
+        <div class="score-num" style="color:${color}">${pct}%</div>
+      </div>
+    </div>
+    <div class="breakdown-grid">${bHTML}</div>
+    ${fHTML}
+    <div class="verdict-banner" style="background:${pct>=65?'var(--sage-light)':'var(--rose-light)'};color:${color};border:.5px solid ${color}44">
+      "${verdict}"
+    </div>
+    <button class="btn-restart" onclick="restartQuiz()">Start over</button>
+    <p class="email-status" id="email-status">Sending results to your email…</p>
+  `;
+
+  window.scrollTo({top:0,behavior:'smooth'});
+
+  // ── EMAIL ─────────────────────────────────────────
+  const bText = SECS.map(s => `${SNAME[s]}: ${sM[s]>0?Math.round(sS[s]/sM[s]*100):0}%`).join(' | ');
+  const fText = uf.length>0 ? uf.map(f=>`• ${f.text} (${SNAME[f.sec]})`).join('\n') : 'None detected.';
+
+  if(EJS_KEY !== 'YOUR_PUBLIC_KEY') {
+    emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+      name,
+      age: age.toString(),
+      age_flag: ageWarn ? '⚠ OUTSIDE 22–28' : '✓ In range',
+      hobbies: hobbies.join(', ') || '—',
+      score: pct + '%',
+      tier,
+      breakdown: bText,
+      flags: fText,
+      to_email: 'cerineguerra@gmail.com'
+    }).then(()=>{
+      const el=document.getElementById('email-status');
+      if(el){ el.className='email-status ok'; el.textContent='✓ Results sent to cerineguerra@gmail.com'; }
+    }).catch(()=>{
+      const el=document.getElementById('email-status');
+      if(el){ el.className='email-status err'; el.textContent='Email failed — check your EmailJS config in the file.'; }
+    });
+  } else {
+    const el=document.getElementById('email-status');
+    if(el){ el.className='email-status err'; el.textContent='EmailJS not set up yet — see comments at top of the script.'; }
+  }
+}
+
+function restartQuiz() {
+  ans = new Array(QS.length).fill(null);
+  cur = 0;
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-profile').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+buildGrid();
+</script>
+</body>
+</html>
